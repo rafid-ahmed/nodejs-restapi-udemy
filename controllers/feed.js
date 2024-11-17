@@ -1,8 +1,14 @@
 exports.getPosts = (req, res, next) => {
     res.status(200).json({
         posts: [{
-            title: 'First Post',
-            content: 'First Post Content Here!'
+            _id: 1,
+            title: 'My new car',
+            content: 'Won LAMBO in a Lottery!',
+            imageUrl: 'images/lambo.jpg',
+            creator: {
+                name: 'Zoro'
+            },
+            createdAt: new Date()
         }]
     });
 };
@@ -15,9 +21,13 @@ exports.createPost = (req, res, next) => {
     res.status(201).json({
         message: 'Post created successfully!',
         post: {
-            id: new Date().toISOString(), 
+            _id: new Date().toISOString(), 
             title: title, 
-            content: content
+            content: content,
+            creator: {
+                name: 'Kratos'
+            },
+            createdAt: new Date()
         }
     });
 };
