@@ -1,9 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
 
 const feedRoutes = require('./routes/feed');
 
 const app = express();
+
+// mongodb connect string
+const MONGODB_URI = 'mongodb+srv://rafidahmed:j6NHJpNFKcPZHR8D@mongocluster.zufav.mongodb.net/messages?retryWrites=true&w=majority&appName=MongoCluster';
 
 app.use(bodyParser.json());
 
@@ -16,4 +20,8 @@ app.use((req, res, next) => {
 
 app.use('/feed', feedRoutes);
 
-app.listen(8080);
+mongoose.connect(MONGODB_URI)
+.then(() => {
+    app.listen(8080);
+})
+.catch(err => console.log(err));
