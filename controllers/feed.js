@@ -114,7 +114,7 @@ exports.editPost = (req, res, next) => {
         if (imageUrl !== post.imageUrl) {
             clearImage(post.imageUrl);
         }
-        
+
         post.title = title;
         post.imageUrl = imageUrl;
         post.content = content;
@@ -122,6 +122,30 @@ exports.editPost = (req, res, next) => {
     })
     .then(result => {
         res.status(200).json({message: 'Post Updated', post: result});
+    })
+    .catch(err => {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    });
+}
+
+exports.deletePost = (req, res, next) => {
+    const postId = req.params.postId;
+    Post.findById(postId)
+    .then(post => {
+        // check logged in user
+        if (!post) {
+            const error = new Error('Could not find post');
+            error.statusCode = 404;
+            throw error;
+        }
+        clearImage(post.imageUrl);
+        return Post.findByIdAndDelete(postId);
+    })
+    .then(result => {
+        return res.status(200).json({message:'Post deleted!'})
     })
     .catch(err => {
         if (!err.statusCode) {
