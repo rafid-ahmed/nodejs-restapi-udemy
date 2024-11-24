@@ -119,17 +119,25 @@ exports.editPost = (req, res, next) => {
     let imageUrl = req.body.image;
     if (req.file) {
         imageUrl = req.file.path;
-    } 
+    }
+
     if (!imageUrl) {
         const error = new Error('No file uploaded!');
         error.statusCode = 422;
         throw error;
     }
+
     Post.findById(postId)
     .then(post => {
         if (!post) {
             const error = new Error('Could not find post');
             error.statusCode = 404;
+            throw error;
+        }
+
+        if (post.creator.toString() !== req.userId) {
+            const error = new Error('Not authorized!');
+            error.statusCode = 403;
             throw error;
         }
 
@@ -163,6 +171,13 @@ exports.deletePost = (req, res, next) => {
             error.statusCode = 404;
             throw error;
         }
+
+        if (post.creator.toString() !== req.userId) {
+            const error = new Error('Not authorized!');
+            error.statusCode = 403;
+            throw error;
+        }
+        
         clearImage(post.imageUrl);
         return Post.findByIdAndDelete(postId);
     })
