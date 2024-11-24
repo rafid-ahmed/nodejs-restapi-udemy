@@ -6,75 +6,69 @@ const validationResult = require('express-validator').validationResult;
 const Post = require('../models/post');
 const User = require('../models/user');
 
-exports.getStatus = (req, res, next) => {
-    User.findById(req.userId)
-    .then(user => {
+exports.getStatus = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.userId);
         res.status(200).json({status: user.status});
-    })
-    .catch(err => {
+    } catch(err) {
         if (!err.statusCode) {
             err.statusCode = 500;
         }
         next(err);
-    });
+    }
 }
 
-exports.updateStatus = (req, res, next) => {
+exports.updateStatus = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         const error = new Error('Validation Failed!');
         error.statusCode = 422;
+        error.data = errors.array();
         throw error;
     }
 
     const status = req.body.status;
-    User.findById(req.userId)
-    .then(user => {
+    try {
+        const user = await User.findById(req.userId);
         user.status = status;
-        return user.save();
-    })
-    .then(result => {
+        await user.save();
         res.status(200).json({message: 'status updated', status: status});
-    })
-    .catch(err => {
+    } catch(err) {
         if (!err.statusCode) {
             err.statusCode = 500;
         }
         next(err);
-    });
+    };
 }
 
-exports.getPosts = (req, res, next) => {
+exports.getPosts = async (req, res, next) => {
     const currentPage = req.query.page || 1;
     const perPage = 2;
-    let totalItems;
-    Post.find().countDocuments()
-    .then(count => {
-        totalItems = count;
-        return Post.find()
-        .skip((currentPage - 1) * perPage)
-        .limit(perPage);
-    })
-    .then(posts => {
+    try {
+        const totalItems = await Post.find().countDocuments();
+        const posts = await Post.find()
+        .populate('creator')
+            .skip((currentPage - 1) * perPage)
+            .limit(perPage);
         res.status(200).json({
             message: 'Fetched posts successfully!',
             posts: posts,
             totalItems: totalItems
         });
-    })
-    .catch(err => {
+    } catch(err) {
         if (!err.statusCode) {
             err.statusCode = 500;
         }
         next(err);
-    });
+    }
 };
 
-exports.createPost = (req, res, next) => {
+exports.createPost = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         const error = new Error('Validation Failed!');
         error.statusCode = 422;
+        error.data = errors.array();
         throw error;
     }
     
@@ -87,7 +81,6 @@ exports.createPost = (req, res, next) => {
     const title = req.body.title;
     const imageUrl = req.file.path;
     const content = req.body.content;
-    let creator;
     const post = new Post({
         title: title, 
         imageUrl: imageUrl,
@@ -95,37 +88,31 @@ exports.createPost = (req, res, next) => {
         creator: req.userId,
     });
 
-    post.save()
-    .then(result => {
-        return User.findById(req.userId);
-    })
-    .then(user => {
-        creator = user;
+    try {
+        await post.save();
+        const user = await User.findById(req.userId);
         user.posts.push(post);
-        return user.save();
-    })
-    .then(result => {
+        await user.save();
         res.status(201).json({
             message: 'Post created successfully!',
             post: post,
             creator: {
-                _id: creator._id,
-                name: creator.name
+                _id: user._id,
+                name: user.name
             }
         });
-    })
-    .catch(err => {
+    } catch(err) {
         if (!err.statusCode) {
             err.statusCode = 500;
         }
         next(err);
-    });
+    };
 };
 
-exports.getPost = (req, res, next) => {
+exports.getPost = async (req, res, next) => {
     const postId = req.params.postId;
-    Post.findById(postId)
-    .then(post => {
+    try {
+        const post = await Post.findById(postId);
         if (!post) {
             const error = new Error('Could not find post');
             error.statusCode = 404;
@@ -135,20 +122,20 @@ exports.getPost = (req, res, next) => {
             message: 'Post fetched!', 
             post: post
         });
-    })
-    .catch(err => {
+    } catch(err) {
         if (!err.statusCode) {
             err.statusCode = 500;
         }
         next(err);
-    });
+    };
 }
 
-exports.editPost = (req, res, next) => {
+exports.editPost = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         const error = new Error('Validation Failed!');
         error.statusCode = 422;
+        error.data = errors.array();
         throw error;
     }
     const postId = req.params.postId;
@@ -165,8 +152,8 @@ exports.editPost = (req, res, next) => {
         throw error;
     }
 
-    Post.findById(postId)
-    .then(post => {
+    try {
+        const post = await Post.findById(postId)    
         if (!post) {
             const error = new Error('Could not find post');
             error.statusCode = 404;
@@ -186,23 +173,21 @@ exports.editPost = (req, res, next) => {
         post.title = title;
         post.imageUrl = imageUrl;
         post.content = content;
-        return post.save();
-    })
-    .then(result => {
-        res.status(200).json({message: 'Post Updated', post: result});
-    })
-    .catch(err => {
+        await post.save();
+        res.status(200).json({message: 'Post Updated', post: post});
+    } catch(err) {
         if (!err.statusCode) {
             err.statusCode = 500;
         }
         next(err);
-    });
+    }
 }
 
-exports.deletePost = (req, res, next) => {
+exports.deletePost = async (req, res, next) => {
     const postId = req.params.postId;
-    Post.findById(postId)
-    .then(post => {
+    
+    try {
+        const post = await Post.findById(postId);
         // check logged in user
         if (!post) {
             const error = new Error('Could not find post');
@@ -217,24 +202,17 @@ exports.deletePost = (req, res, next) => {
         }
 
         clearImage(post.imageUrl);
-        return Post.findByIdAndDelete(postId);
-    })
-    .then(result => {
-        return User.findById(req.userId);
-    })
-    .then(user => {
+        await  Post.findByIdAndDelete(postId);
+        const user = await User.findById(req.userId);
         user.posts.pop(postId);
-        return user.save();
-    })
-    .then(user => {
-        return res.status(200).json({message:'Post deleted!'})
-    })
-    .catch(err => {
+        await user.save();
+        res.status(200).json({message:'Post deleted!'})
+    } catch(err) {
         if (!err.statusCode) {
             err.statusCode = 500;
         }
         next(err);
-    });
+    }
 }
 
 const clearImage = filePath => {
