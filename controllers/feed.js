@@ -6,6 +6,44 @@ const validationResult = require('express-validator').validationResult;
 const Post = require('../models/post');
 const User = require('../models/user');
 
+exports.getStatus = (req, res, next) => {
+    User.findById(req.userId)
+    .then(user => {
+        res.status(200).json({status: user.status});
+    })
+    .catch(err => {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    });
+}
+
+exports.updateStatus = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        const error = new Error('Validation Failed!');
+        error.statusCode = 422;
+        throw error;
+    }
+
+    const status = req.body.status;
+    User.findById(req.userId)
+    .then(user => {
+        user.status = status;
+        return user.save();
+    })
+    .then(result => {
+        res.status(200).json({message: 'status updated', status: status});
+    })
+    .catch(err => {
+        if (!err.statusCode) {
+            err.statusCode = 500;
+        }
+        next(err);
+    });
+}
+
 exports.getPosts = (req, res, next) => {
     const currentPage = req.query.page || 1;
     const perPage = 2;
