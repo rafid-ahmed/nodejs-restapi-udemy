@@ -4,9 +4,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const multer = require('multer');
+const graphqlHttp = require('express-graphql').graphqlHTTP;
 
-const authRoutes = require('./routes/auth');
-const feedRoutes = require('./routes/feed');
+const graphqlSchema = require('./graphql/schema');
+const graphqlResolver = require('./graphql/resolvers');
 
 const app = express();
 
@@ -39,8 +40,10 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     next();
 });
-app.use('/auth', authRoutes);
-app.use('/feed', feedRoutes);
+app.use('/graphql', graphqlHttp({
+    schema: graphqlSchema,
+    rootValue: graphqlResolver
+}));
 app.use((err, req, res, next) => {
     console.log(err);
     const status = err.statusCode || 500;
@@ -52,14 +55,6 @@ app.use((err, req, res, next) => {
 
 mongoose.connect(MONGODB_URI)
 .then(() => {
-    const server = app.listen(8080);
-    const io = require('./socket').init(server);
-    io.on('connection', socket => {
-        // console.log('Client Connected!');
-    });
-
-    io.on("connect_error", (err) => {
-        console.log(`connect_error due to ${err.message}`);
-    });
+    app.listen(8080);
 })
 .catch(err => console.log(err));
