@@ -55,7 +55,7 @@ mongoose.connect(MONGODB_URI)
     const server = app.listen(8080);
     const io = require('./socket').init(server);
     io.on('connection', socket => {
-        console.log('Client Connected!');
+        // console.log('Client Connected!');
     });
 
     io.on("connect_error", (err) => {
