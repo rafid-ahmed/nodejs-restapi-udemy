@@ -8,14 +8,16 @@ module.exports = {
         const errors = [];
         if (!validator.isEmail(userInput.email))
         {
-            errors.push(new Error('Email is invalid'));
+            errors.push({ message: 'E-mail is invalid' });
         }
-        if (!validator.isLength(userInput.email, {min: 5}))
+        if (!validator.isLength(userInput.password, {min: 5}))
         {
-            errors.push(new Error('Password too short'));
+            errors.push({ message: 'Password too short' });
         }
         if (errors.length > 0) {
-            const error = new Error('invalid input');
+            const error = new Error('Invalid input');
+            error.data = errors;
+            error.code = 422;
             throw error;
         }
         const existingUser = await User.findOne({email: userInput.email});
