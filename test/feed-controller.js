@@ -3,6 +3,7 @@ const sinon = require('sinon');
 const mongoose = require('mongoose');
 
 const User = require('../models/user');
+const Post = require('../models/post');
 const FeedController = require('../controllers/feed');
 
 describe('Feed Controller', function() {
@@ -21,7 +22,7 @@ describe('Feed Controller', function() {
         .then(() => {
             done();
         });
-    })
+    });
 
     it('should send a response with a valid status for existing user', function(done) {
         const req = {
@@ -45,6 +46,32 @@ describe('Feed Controller', function() {
             done();
         });
     });
+
+    it('should add a created post to posts of the creator', function(done) {
+        const req = {
+            userId: '672754fa755b0a29bb4db033',
+            body: {
+                title: 'Test Post',
+                content: 'Dummy test post',
+            },
+            file: {
+                path: 'dummy path'
+            }
+        };
+        const res = {
+            status: function(code) {
+                return this;
+            },
+            json: function(data) {
+            }
+        };
+        FeedController.createPost(req, res, () => {})
+        .then(savedUser => {
+            expect(savedUser).to.have.property('posts');
+            expect(savedUser.posts).to.have.length(1);
+            done();
+        });
+    });
     
     after(function(done) {
         User.deleteMany({}).then(() => {
@@ -53,5 +80,5 @@ describe('Feed Controller', function() {
         .then(() => {
             done();
         });
-    })
+    });
 })
