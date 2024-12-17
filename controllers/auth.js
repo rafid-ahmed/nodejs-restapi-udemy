@@ -41,15 +41,14 @@ exports.login = async (req, res, next) => {
     try {
         const user = await User.findOne({email: email});
         if (!user) {
-            const error = new Error('this email could not be found');
+            const error = new Error('This email could not be found.');
             error.statusCode = 404;
-            error.data = errors.array();
             throw error;
         }
 
         const result = await bcrypt.compare(password, user.password);
         if (!result) {
-            const error = new Error('wrong password');
+            const error = new Error('Wrong password.');
             error.statusCode = 401;
             throw error;
         }

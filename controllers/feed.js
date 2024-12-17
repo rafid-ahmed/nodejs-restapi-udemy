@@ -32,7 +32,7 @@ exports.updateStatus = async (req, res, next) => {
         const user = await User.findById(req.userId);
         user.status = status;
         await user.save();
-        res.status(200).json({message: 'status updated', status: status});
+        res.status(200).json({message: 'Status Updated.', status: status});
     } catch(err) {
         if (!err.statusCode) {
             err.statusCode = 500;
@@ -43,7 +43,7 @@ exports.updateStatus = async (req, res, next) => {
 
 exports.getPosts = async (req, res, next) => {
     const currentPage = req.query.page || 1;
-    const perPage = 2;
+    const perPage = req.query.perPage || 2;
     try {
         const totalItems = await Post.find().countDocuments();
         const posts = await Post.find()
